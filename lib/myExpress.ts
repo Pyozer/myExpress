@@ -1,24 +1,24 @@
 import http from "http"
 import Route from "./Route"
 import RouteType from "./RouteType"
+import { readFile } from "fs"
 
 class MyExpress {
     public server: http.Server
     public routes: Route[] = []
-    
+
     constructor() {
         this.server = http.createServer((req: http.IncomingMessage, res: http.ServerResponse) => {
-            console.log(req.url)
-
             const routeFind = this.routes.find((route) => {
-                console.log(route)
-
                 return route.path === req.url && (route.type === req.method || route.type === RouteType.ALL)
             })
-            if (routeFind) routeFind.callback(req, res)
-            else res.writeHead(404)
-
-            res.end()
+            if (routeFind) {
+                routeFind.callback(req, res)
+            } else {
+                res.writeHead(404)
+                res.write("404 Route not found")
+                res.end()
+            }
         })
     }
 
@@ -53,6 +53,26 @@ class MyExpress {
 
     public all(path: string, callback: http.RequestListener): void {
         this.manageListener(path, callback, RouteType.ALL)
+    }
+
+    public render(file: string, params: Record<string, string>, callback: (err: Error, html: string) => void): void {
+        if (!file || file.trim().length < 1) throw "File template name cannot be null or empty"
+        
+        readFile(`./templates/${file}`, (err, data) => {
+            if (err) {
+                callback(err, null)
+                return
+            }
+            let html = data.toString()
+            if (params) {
+                Object.keys(params).forEach((key) => {
+                    const value = params[key]
+                    html = html.replace(`{{${key}}}`, value)
+                })
+            }
+            callback(null, html)
+        })
+
     }
 }
 
