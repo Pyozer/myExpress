@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./assets/myExpress.png" />
+  <img src="https://raw.githubusercontent.com/makiboto/myExpress/master/assets/myExpress.png" />
 </p>
 
 ## <a name='TOC'>🐼 Summary</a>
