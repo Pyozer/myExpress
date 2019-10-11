@@ -5,7 +5,7 @@ import RouteType from "./RouteType"
 class MyExpress {
     public server: http.Server
     public routes: Route[] = []
-
+    
     constructor() {
         this.server = http.createServer((req: http.IncomingMessage, res: http.ServerResponse) => {
             console.log(req.url)
@@ -26,7 +26,7 @@ class MyExpress {
         this.server.listen(port, callback)
     }
 
-    private manageListener(path: string, callback: RequestCallback, type: RouteType) {
+    private manageListener(path: string, callback: http.RequestListener, type: RouteType) {
         const routeFind = this.routes.find((route) => route.path === path && route.type === type)
         if (!routeFind) {
             this.routes.push(new Route(path, type, callback))
@@ -35,23 +35,23 @@ class MyExpress {
         }
     }
 
-    public get(path: string, callback: RequestCallback): void {
+    public get(path: string, callback: http.RequestListener): void {
         this.manageListener(path, callback, RouteType.GET)
     }
 
-    public post(path: string, callback: RequestCallback): void {
+    public post(path: string, callback: http.RequestListener): void {
         this.manageListener(path, callback, RouteType.POST)
     }
 
-    public put(path: string, callback: RequestCallback): void {
+    public put(path: string, callback: http.RequestListener): void {
         this.manageListener(path, callback, RouteType.PUT)
     }
 
-    public delete(path: string, callback: RequestCallback): void {
+    public delete(path: string, callback: http.RequestListener): void {
         this.manageListener(path, callback, RouteType.DELETE)
     }
 
-    public all(path: string, callback: RequestCallback): void {
+    public all(path: string, callback: http.RequestListener): void {
         this.manageListener(path, callback, RouteType.ALL)
     }
 }
