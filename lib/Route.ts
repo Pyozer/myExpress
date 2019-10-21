@@ -1,7 +1,7 @@
-import { RequestListener } from "http"
+import { RequestListener } from "./myExpress.d"
 import RouteType from "./RouteType"
 
-export default class Listener {
+export default class Route {
     public path: string
     public type: RouteType
     public callback: RequestListener

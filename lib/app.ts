@@ -1,53 +1,36 @@
-import { IncomingMessage, ServerResponse } from "http"
-import { express } from "./myExpress"
+import { Request, Response } from './myExpress.d';
+import express from "./myExpress"
 
-const server = express()
+const app = express()
 const port = 3000
 
-server.get("/", (req: IncomingMessage, res: ServerResponse) => {
-    res.writeHead(200)
-    res.write("Route / GET")
-    res.end()
+app.get("/", (req: Request, res: Response) => {
+    res.json({ route: "Route / GET" })
 })
-server.post("/", (req: IncomingMessage, res: ServerResponse) => {
-    res.writeHead(200)
-    res.write("Route / POST")
-    res.end()
+app.post("/", (req: Request, res: Response) => {
+    res.send({ route: "Route / POST" })
 })
-server.put("/test", (req: IncomingMessage, res: ServerResponse) => {
-    res.writeHead(200)
-    res.write("Route /test PUT")
-    res.end()
+app.put("/test", (req: Request, res: Response) => {
+    res.html("Route /test PUT")
 })
-server.delete("/test", (req: IncomingMessage, res: ServerResponse) => {
-    res.writeHead(200)
-    res.write("Route /test DELETE")
-    res.end()
+app.delete("/test", (req: Request, res: Response) => {
+    res.html("Route /test DELETE")
 })
-server.all("/all", (req: IncomingMessage, res: ServerResponse) => {
-    res.writeHead(200)
-    res.write(`Route /all ${req.method}`)
-    res.end()
+app.all("/all", (req: Request, res: Response) => {
+    res.html(`Route /all ${req.method}`)
 })
 
-server.all("/home", (req: IncomingMessage, res: ServerResponse) => {
-    server.render('home.html', { 'username': 'PodPak' }, (err, html) => {
-        res.setHeader('Content-Type', 'text/html')
-        
+app.all("/home", (req: Request, res: Response) => {
+    app.render('home', { 'username': 'PodPak', 'weight': 33.1345678 }, (err, html) => {
         if (err) {
-            res.writeHead(500)
-            res.write(err.toString())
+            res.statusCode = 500
+            res.json({ error: err.toString() })
         } else {
-            res.writeHead(200)
-            res.write(html)
+            res.html(html)
         }
-
-        res.end()
     })
 })
 
-
-
-server.listen(port, () => {
+app.listen(port, () => {
     console.log("Server started !")
 })
