@@ -15,6 +15,7 @@
         "object-literal-sort-keys": false,
         "no-console": false,
         "no-var-requires": false,
+        "no-eval": false,
         "max-line-length": [
             true,
             {

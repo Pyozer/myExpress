@@ -11,5 +11,10 @@
         <h1>Hello, {{username | upper}} !</h1>
         <h1>Hello, {{username | lower}} !</h1>
         <h2>{{weight | fixed:3}}</h2>
+
+        {{ if username == "PodPak" }}
+            <h1>Conditional HTML when username == "PodPak"</h1>
+            <h2>Inside conditions are not supported :/</h2>
+        {{ endif }}
     </body>
 </html>

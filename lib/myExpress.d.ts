@@ -1,3 +1,4 @@
+import { RenderCallback, RequestListener } from './myExpress.d';
 import { ServerResponse, IncomingMessage } from 'http';
 import RouteType from './RouteType'
 

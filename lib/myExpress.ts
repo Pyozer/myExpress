@@ -119,6 +119,22 @@ class MyExpress implements MyExpressImpl, Transformers {
             }
             let html = data.toString()
             if (params) {
+                // Handle if conditions
+                const ifElseRegex = /{{ *if *(.*) *}}((\n(.*))*){{ *endif *}}/gm
+
+                html = html.replace(ifElseRegex, (_, ...args) => {
+                    let [condition, content] = args
+                    content = content.trim()
+
+                    condition = condition.replace(/["]?([a-zA-Z-_]+)["]?/g, (item: string) => {
+                        return item.includes('"') ? item : `params.${item}`
+                    })
+
+                    if (!eval(condition)) { return "" }
+                    return content
+                })
+
+                // Handle simple variable with transformers
                 const regex = /{{ ?(\w+)(( ?[|] ?)((\w+)(\:([0-9]+))?))? ?}}/gi
 
                 html = html.replace(regex, (_, ...args: any[]): string => {
@@ -205,3 +221,5 @@ class MyExpress implements MyExpressImpl, Transformers {
 export default function() {
     return new MyExpress()
 }
+
+export * from "./myExpress.d"
