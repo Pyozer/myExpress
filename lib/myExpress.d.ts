@@ -4,7 +4,9 @@ import RouteType from './RouteType'
 export type RenderCallback = (err: Error, html: string) => void;
 export type RequestListener = (req: Request, res: Response, next?: Function) => void;
 
-export interface Request extends IncomingMessage { }
+export interface Request extends IncomingMessage {
+    params: {[k: string]: string}
+}
 export interface Response extends ServerResponse {
     json(object: object, statusCode?: number): void;
     html(html: string, statusCode?: number): void;
@@ -28,6 +30,7 @@ export interface MyExpressImpl {
 
 export interface Route {
     path: string
+    regex: RegExp
     type: RouteType
     callback: RequestListener
 }

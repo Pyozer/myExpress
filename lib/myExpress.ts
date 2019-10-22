@@ -22,10 +22,6 @@ class MyExpress implements MyExpressImpl, Transformers {
 
     constructor() {
         this.server = http.createServer(async (req: http.IncomingMessage, res: http.ServerResponse) => {
-            const routeFind = this.routes.find((route) => {
-                return route.path === req.url && (route.type === req.method || route.type === RouteType.ALL)
-            })
-
             const request: Request = this.handleRequest(req)
             const response: Response = this.handleResponse(res)
 
@@ -39,6 +35,19 @@ class MyExpress implements MyExpressImpl, Transformers {
             } catch (_) {
                 return
             }
+
+            const routeFind = this.routes.find((route) => {
+                if (route.type !== req.method && route.type !== RouteType.ALL) { return false }
+
+                const matcher = req.url.match(route.regex)
+
+                if (matcher && matcher.length > 0) {
+                    request.params = matcher.groups
+                    return true
+                }
+
+                return route.path === req.url
+            })
 
             if (routeFind) {
                 routeFind.callback(request, response)
@@ -143,8 +152,7 @@ class MyExpress implements MyExpressImpl, Transformers {
         const response: Response = res as Response
 
         const sendResponse = (contentType: string, content: string, statusCode?: number) => {
-            response.statusCode = statusCode || 200
-            response.setHeader("Content-Type", contentType)
+            response.writeHead(statusCode || 200, {"Content-Type": contentType})
             response.write(content)
             response.end()
         }
@@ -156,18 +164,29 @@ class MyExpress implements MyExpressImpl, Transformers {
             sendResponse("text/html", html, statusCode)
         }
         response.send = (content: string | object, statusCode?: number) => {
-            if (typeof content === "string") { response.html(content, statusCode) } else { response.json(content, statusCode) }
+            if (typeof content === "string") {
+                response.html(content, statusCode)
+            } else {
+                response.json(content, statusCode)
+            }
         }
         return response
     }
 
     private manageListener(path: string, callback: RequestListener, type: RouteType) {
         const routeFind = this.routes.find((route) => route.path === path && route.type === type)
-        if (!routeFind) {
-            this.routes.push({ path, type, callback })
-        } else {
+
+        if (routeFind) {
             routeFind.callback = callback
+            return
         }
+
+        let regexStr = path.replace(/\//g, "\\/").replace(/(:([\w]+))/g, (_, ...args: any[]): string => {
+            const [, param] = args
+            return `(?<${param}>\\w+)`
+        })
+        regexStr = `^${regexStr}(\/)?$`
+        this.routes.push({ path, regex: new RegExp(regexStr), type, callback })
     }
 }
 

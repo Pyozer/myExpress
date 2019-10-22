@@ -30,6 +30,16 @@ app.all("/all", (req: Request, res: Response) => {
     res.html(`Route /all ${req.method}`)
 })
 
+app.get("/users/:id", (req: Request, res: Response) => {
+    const { id } = req.params
+    res.send({ route: "Route USERS / GET", id })
+})
+
+app.get("/users/:id/books/:bookId", (req: Request, res: Response) => {
+    const { id, bookId } = req.params
+    res.send({ route: "Route USERS/BOOKS / GET", id, bookId })
+})
+
 app.all("/home", (req: Request, res: Response) => {
     app.render("home", { username: "PodPak", weight: 33.1345678 }, (err, html) => {
         if (err) {
