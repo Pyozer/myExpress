@@ -1,6 +1,7 @@
 import { readFile } from "fs"
 import http from "http"
 import { join } from "path"
+import { parse } from "url"
 import {
     MyExpressImpl,
     RenderCallback,
@@ -11,7 +12,6 @@ import {
     Transformers
 } from "./myExpress.d"
 import RouteType from "./RouteType"
-import { parse } from "url"
 
 class MyExpress implements MyExpressImpl, Transformers {
     public server: http.Server
@@ -43,7 +43,7 @@ class MyExpress implements MyExpressImpl, Transformers {
                 const matcher = req.url.match(route.regex)
                 const isMatched = matcher && matcher.length > 0
 
-                if (!isMatched && route.path !== req.url) return false
+                if (!isMatched && route.path !== req.url) { return false }
 
                 request.params = {}
                 if (isMatched) {
@@ -51,9 +51,9 @@ class MyExpress implements MyExpressImpl, Transformers {
                 }
 
                 request.query = {}
-                let queryStr = parse(req.url).query || ''
-                queryStr.split('&').forEach((q) => {
-                    const [key, value] = q.split('=')
+                const queryStr = parse(req.url).query || ""
+                queryStr.split("&").forEach((q) => {
+                    const [key, value] = q.split("=")
                     request.query[key] = value
                 })
 
@@ -192,16 +192,16 @@ class MyExpress implements MyExpressImpl, Transformers {
             return
         }
 
-        let regexStr = path.replace(/\//g, "\\/").replace(/(:([\w]+))/g, (_, ...args: any[]): string => {
+        const regexStr = path.replace(/\//g, "\\/").replace(/(:([\w]+))/g, (_, ...args: any[]): string => {
             const [, param] = args
             return `(?<${param}>\\w+)`
         })
-        let regex = new RegExp(`^${regexStr}(\\/)?(\\?.*)?$`)
+        const regex = new RegExp(`^${regexStr}(\\/)?(\\?.*)?$`)
 
         this.routes.push({ path, regex, type, callback })
     }
 }
 
-export default function () {
+export default function() {
     return new MyExpress()
 }
