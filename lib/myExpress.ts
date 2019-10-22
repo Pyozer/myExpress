@@ -11,6 +11,7 @@ import {
     Transformers
 } from "./myExpress.d"
 import RouteType from "./RouteType"
+import { parse } from "url"
 
 class MyExpress implements MyExpressImpl, Transformers {
     public server: http.Server
@@ -40,13 +41,23 @@ class MyExpress implements MyExpressImpl, Transformers {
                 if (route.type !== req.method && route.type !== RouteType.ALL) { return false }
 
                 const matcher = req.url.match(route.regex)
+                const isMatched = matcher && matcher.length > 0
 
-                if (matcher && matcher.length > 0) {
+                if (!isMatched && route.path !== req.url) return false
+
+                request.params = {}
+                if (isMatched) {
                     request.params = matcher.groups
-                    return true
                 }
 
-                return route.path === req.url
+                request.query = {}
+                let queryStr = parse(req.url).query || ''
+                queryStr.split('&').forEach((q) => {
+                    const [key, value] = q.split('=')
+                    request.query[key] = value
+                })
+
+                return true
             })
 
             if (routeFind) {
@@ -152,7 +163,7 @@ class MyExpress implements MyExpressImpl, Transformers {
         const response: Response = res as Response
 
         const sendResponse = (contentType: string, content: string, statusCode?: number) => {
-            response.writeHead(statusCode || 200, {"Content-Type": contentType})
+            response.writeHead(statusCode || 200, { "Content-Type": contentType })
             response.write(content)
             response.end()
         }
@@ -185,11 +196,12 @@ class MyExpress implements MyExpressImpl, Transformers {
             const [, param] = args
             return `(?<${param}>\\w+)`
         })
-        regexStr = `^${regexStr}(\/)?$`
-        this.routes.push({ path, regex: new RegExp(regexStr), type, callback })
+        let regex = new RegExp(`^${regexStr}(\\/)?(\\?.*)?$`)
+
+        this.routes.push({ path, regex, type, callback })
     }
 }
 
-export default function() {
+export default function () {
     return new MyExpress()
 }

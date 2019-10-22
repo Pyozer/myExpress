@@ -6,6 +6,7 @@ export type RequestListener = (req: Request, res: Response, next?: Function) => 
 
 export interface Request extends IncomingMessage {
     params: {[k: string]: string}
+    query: {[k: string]: string}
 }
 export interface Response extends ServerResponse {
     json(object: object, statusCode?: number): void;
