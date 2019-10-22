@@ -1,8 +1,18 @@
-import { Request, Response } from './myExpress.d';
 import express from "./myExpress"
+import { Request, Response } from "./myExpress.d"
 
 const app = express()
 const port = 3000
+
+app.use((req, res, next) => {
+    console.log("First Middleware")
+    next()
+})
+
+app.use((req, res, next) => {
+    console.log("Second Middleware")
+    next()
+})
 
 app.get("/", (req: Request, res: Response) => {
     res.json({ route: "Route / GET" })
@@ -21,10 +31,9 @@ app.all("/all", (req: Request, res: Response) => {
 })
 
 app.all("/home", (req: Request, res: Response) => {
-    app.render('home', { 'username': 'PodPak', 'weight': 33.1345678 }, (err, html) => {
+    app.render("home", { username: "PodPak", weight: 33.1345678 }, (err, html) => {
         if (err) {
-            res.statusCode = 500
-            res.json({ error: err.toString() })
+            res.json({ error: err.toString() }, 500)
         } else {
             res.html(html)
         }

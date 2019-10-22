@@ -1,65 +1,55 @@
-import http from "http"
 import { readFile } from "fs"
-import Route from "./Route"
-import RouteType from "./RouteType"
-import { MyExpressImpl, RenderCallback, Request, Response, RequestListener } from "./myExpress.d"
+import http from "http"
 import { join } from "path"
+import {
+    MyExpressImpl,
+    RenderCallback,
+    Request,
+    RequestListener,
+    Response,
+    Route,
+    Transformers
+} from "./myExpress.d"
+import RouteType from "./RouteType"
 
-class MyExpress implements MyExpressImpl {
-    private readonly TEMPLATE_PATH = './templates'
-    private readonly TEMPLATE_EXT = '.html'
-
+class MyExpress implements MyExpressImpl, Transformers {
     public server: http.Server
     public routes: Route[] = []
+    public middlewares: RequestListener[] = []
+
+    private readonly TEMPLATE_PATH = "./templates"
+    private readonly TEMPLATE_EXT = ".html"
 
     constructor() {
-        this.server = http.createServer((req: http.IncomingMessage, res: http.ServerResponse) => {
+        this.server = http.createServer(async (req: http.IncomingMessage, res: http.ServerResponse) => {
             const routeFind = this.routes.find((route) => {
                 return route.path === req.url && (route.type === req.method || route.type === RouteType.ALL)
             })
 
-            let request: Request = req as Request
-            let response: Response = this.handleResponse(res)
+            const request: Request = this.handleRequest(req)
+            const response: Response = this.handleResponse(res)
+
+            try {
+                for (const middleware of this.middlewares) {
+                    await new Promise((resolve, reject) => {
+                        response.on("close", reject)
+                        middleware(request, response, () => resolve())
+                    })
+                }
+            } catch (_) {
+                return
+            }
 
             if (routeFind) {
                 routeFind.callback(request, response)
             } else {
-                response.writeHead(404)
-                response.send("404 Route not found")
+                response.send("404 Route not found", 404)
             }
         })
     }
 
-    private handleResponse(res: http.ServerResponse): Response {
-        let response: Response = res as Response
-        response.json = (object: Object) => {
-            response.setHeader('Content-Type', 'application/json')
-            response.write(JSON.stringify(object));
-            response.end();
-        }
-        response.html = (html: string) => {
-            response.setHeader('Content-Type', 'text/html')
-            response.write(html);
-            response.end();
-        }
-        response.send = (object: string | Object) => {
-            if (typeof object === 'string') response.html(object)
-            else response.json(object)
-        }
-        return response;
-    }
-
     public listen(port: number, callback: () => void): void {
         this.server.listen(port, callback)
-    }
-
-    private manageListener(path: string, callback: RequestListener, type: RouteType) {
-        const routeFind = this.routes.find((route) => route.path === path && route.type === type)
-        if (!routeFind) {
-            this.routes.push(new Route(path, type, callback))
-        } else {
-            routeFind.callback = callback
-        }
     }
 
     public get(path: string, callback: RequestListener): void {
@@ -82,6 +72,11 @@ class MyExpress implements MyExpressImpl {
         this.manageListener(path, callback, RouteType.ALL)
     }
 
+    public use(callback: RequestListener): void {
+        if (!callback) { return }
+        this.middlewares.push(callback)
+    }
+
     public render(file: string, callback: RenderCallback): void
     public render(file: string, params: Record<string, string | number>, callback: RenderCallback): void
     public render(file: string, paramsOrCallback: Record<string, string | number> | RenderCallback, callback?: RenderCallback) {
@@ -93,47 +88,89 @@ class MyExpress implements MyExpressImpl {
             callback = paramsOrCallback as RenderCallback
         }
 
-        if (!file || file.trim().length < 1) throw "File template name cannot be null or empty"
+        if (!file || file.trim().length < 1) { throw new Error("File template name cannot be null or empty") }
 
-        const pathName = join(
-            this.TEMPLATE_PATH,
-            `${file}${this.TEMPLATE_EXT}`
-        )
+        const pathName = join(this.TEMPLATE_PATH, `${file}${this.TEMPLATE_EXT}`)
 
-        readFile(pathName, 'utf-8', (err: NodeJS.ErrnoException, data: Buffer) => {
+        readFile(pathName, "utf-8", (err: NodeJS.ErrnoException, data: Buffer) => {
             if (err) {
                 callback(err, null)
                 return
             }
             let html = data.toString()
             if (params) {
-                const regex = /{{ ?(\w+)(( ?[|] ?)((\w+)(\:(\w+))?))? ?}}/gi
-                html = html.replace(regex, (_, ...args: any[]): string => {
-                    const [key, , , , setting, , optional]: string[] = args
-                    let newValue: string = `${params[key]}`
+                const regex = /{{ ?(\w+)(( ?[|] ?)((\w+)(\:([0-9]+))?))? ?}}/gi
 
-                    if (!newValue) return 'UNDEFINED'
-                    if (!setting) return newValue;
+                html = html.replace(regex, (_, ...args: any[]): string => {
+                    const [key, , pipe, , setting, , optional]: string[] = args
+                    const newValue: string = `${params[key]}`
+
+                    if (!newValue) { return "UNDEFINED" }
+                    if (!pipe && !setting) { return newValue }
 
                     switch (setting.toUpperCase()) {
-                        case 'UPPER': return newValue.toUpperCase()
-                        case 'LOWER': return newValue.toLowerCase()
-                        case 'FIXED':
-                            if (parseInt(optional) === NaN) return newValue
-                            if (parseFloat(newValue) === NaN) return newValue
-                            return parseFloat(newValue).toFixed(parseInt(optional))
-
-                        default:
-                            return newValue
+                        case "UPPER": return this.upper(newValue)
+                        case "LOWER": return this.lower(newValue)
+                        case "FIXED": return this.fixed(newValue, optional)
                     }
-
+                    return newValue
                 })
             }
             callback(null, html)
         })
     }
+
+    public upper(value: string): string {
+        return value.toUpperCase()
+    }
+
+    public lower(value: string): string {
+        return value.toLowerCase()
+    }
+
+    public fixed(value: string, limit: string): string {
+        if (isNaN(parseInt(limit, 10))) { return value }
+        if (isNaN(parseFloat(value))) { return value }
+        return parseFloat(value).toFixed(parseInt(limit, 10))
+    }
+
+    private handleRequest(req: http.IncomingMessage): Request {
+        const request: Request = req as Request
+        return request
+    }
+
+    private handleResponse(res: http.ServerResponse): Response {
+        const response: Response = res as Response
+
+        const sendResponse = (contentType: string, content: string, statusCode?: number) => {
+            response.statusCode = statusCode || 200
+            response.setHeader("Content-Type", contentType)
+            response.write(content)
+            response.end()
+        }
+
+        response.json = (object: object, statusCode?: number) => {
+            sendResponse("application/json", JSON.stringify(object), statusCode)
+        }
+        response.html = (html: string, statusCode?: number) => {
+            sendResponse("text/html", html, statusCode)
+        }
+        response.send = (content: string | object, statusCode?: number) => {
+            if (typeof content === "string") { response.html(content, statusCode) } else { response.json(content, statusCode) }
+        }
+        return response
+    }
+
+    private manageListener(path: string, callback: RequestListener, type: RouteType) {
+        const routeFind = this.routes.find((route) => route.path === path && route.type === type)
+        if (!routeFind) {
+            this.routes.push({ path, type, callback })
+        } else {
+            routeFind.callback = callback
+        }
+    }
 }
 
-export default function () {
+export default function() {
     return new MyExpress()
 }
