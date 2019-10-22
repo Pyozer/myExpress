@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/makiboto/myExpress/master/assets/myExpress.png" />
+    <img src="https://raw.githubusercontent.com/makiboto/myExpress/master/assets/myExpress.png" />
 </p>
 
 ## <a name='TOC'>🐼 Summary</a>
@@ -19,7 +19,7 @@ Hi, here are some rules to carry out this story oav;
 ```sh
 ~/codeflix/onecode/myExpress ❯❯❯ cat -e .author.json
 {
-  "username": "majdi"
+  "username": "ch0pper"
 }$
 ```
 
@@ -58,6 +58,14 @@ You **HAVE TO** and handle the following properties:
 - `app.all()`
 - `app.listen()`
 
+Exemple:
+
+```js
+app.get('/api', (req, res) => {
+  res.json({ hello: 'From API' })
+})
+```
+
 #### Rendering
 
 You **HAVE TO** add a render method that follow express rules:
@@ -68,7 +76,7 @@ app.render('home', (err, html) => {
 })
 
 app.render('home', { name: 'Ch0pper' }, (err, html) => {
-  // ...
+  res.send(html)
 })
 ```
 
@@ -138,6 +146,8 @@ app.render('home', { name: 'Ch0pper', weight: 33.1337 }, (err, html) => {
 
 #### Advanced
 
+##### Middleware
+
 Now you **HAVE TO** handle the `app.use` method for middleware.
 This method take a callback with the following signature:
 
@@ -149,6 +159,25 @@ function (req, res, next) {
 ```
 
 > What is next ? ;)
+
+##### Query parameters and args
+
+Well, an API is better if we can handle all parameters send by the client.
+You **HAVE TO** handle all of them ;D
+
+```js
+app.get('/user/:id', (req, res) => {
+  const { id } = req.params
+  console.log(`The user id is ${id}`)
+  // ...
+})
+
+app.get('/users?limit=42&status=ADMIN', (req, res) => {
+  const { limit, status } = req.qParams
+  console.log(`The limitation is ${limit} for ${status} users`)
+  // ...
+})
+```
 
 ## <a name='bonus'>🦄 Bonus</a>
 
