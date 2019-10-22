@@ -1,9 +1,13 @@
-import express from "./myExpress"
-import { Request, Response } from "./myExpress.d"
+import { join } from "path"
+import express from "../lib/myExpress"
+import { Request, Response } from "../lib/myExpress.d"
 
 const app = express()
 const port = 3000
 
+app.setConfig({
+    templatePath: join(__dirname, "templates")
+})
 app.use((req, res, next) => {
     console.log("First Middleware")
     next()

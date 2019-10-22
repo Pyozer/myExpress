@@ -17,6 +17,7 @@ export interface Response extends ServerResponse {
 
 export interface MyExpressImpl {
     listen(port: number, callback: () => void): void
+    setConfig(config: Config): void
 
     get(path: string, callback: RequestListener): void
     post(path: string, callback: RequestListener): void
@@ -41,4 +42,8 @@ export interface Transformers {
     upper(value: string): string
     lower(value: string): string
     fixed(value: string, limit: string): string
+}
+
+export interface Config {
+    templatePath: string
 }

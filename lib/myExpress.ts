@@ -3,6 +3,7 @@ import http from "http"
 import { join } from "path"
 import { parse } from "url"
 import {
+    Config,
     MyExpressImpl,
     RenderCallback,
     Request,
@@ -18,10 +19,16 @@ class MyExpress implements MyExpressImpl, Transformers {
     public routes: Route[] = []
     public middlewares: RequestListener[] = []
 
+    public config: Config
+
     private readonly TEMPLATE_PATH = "./templates"
     private readonly TEMPLATE_EXT = ".html"
 
     constructor() {
+        this.config = {
+            templatePath: this.TEMPLATE_PATH
+        }
+
         this.server = http.createServer(async (req: http.IncomingMessage, res: http.ServerResponse) => {
             const request: Request = this.handleRequest(req)
             const response: Response = this.handleResponse(res)
@@ -72,6 +79,10 @@ class MyExpress implements MyExpressImpl, Transformers {
         this.server.listen(port, callback)
     }
 
+    public setConfig(config: Config): void {
+        this.config = config
+    }
+
     public get(path: string, callback: RequestListener): void {
         this.manageListener(path, callback, RouteType.GET)
     }
@@ -110,7 +121,7 @@ class MyExpress implements MyExpressImpl, Transformers {
 
         if (!file || file.trim().length < 1) { throw new Error("File template name cannot be null or empty") }
 
-        const pathName = join(this.TEMPLATE_PATH, `${file}${this.TEMPLATE_EXT}`)
+        const pathName = join(this.config.templatePath, `${file}${this.TEMPLATE_EXT}`)
 
         readFile(pathName, "utf-8", (err: NodeJS.ErrnoException, data: Buffer) => {
             if (err) {

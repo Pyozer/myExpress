@@ -11,7 +11,7 @@
     "moduleResolution": "node",
     "sourceMap": true,
     "outDir": "dist",
-    "rootDir": "lib",
+    "rootDir": "./",
     "baseUrl": ".",
     "paths": {
       "*": [
@@ -23,6 +23,6 @@
     "resolveJsonModule": true
   },
   "include": [
-    "lib/**/*", "templates/**/*"
+    "lib/**/*", "example/**/*"
   ]
 }

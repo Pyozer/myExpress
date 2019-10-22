@@ -8,9 +8,9 @@
         "clean": "rm -rf dist/*",
         "lint": "tslint -c tslint.json -p tsconfig.json --fix",
         "tsc": "tsc",
-        "build": "npm-run-all clean lint tsc",
-        "dev": "tsc-watch --onSuccess \"node ./dist/app.js\"",
-        "start": "node ."
+        "build": "npm-run-all clean lint tsc && cp -R example/templates dist/example/",
+        "dev": "tsc-watch --onSuccess \"node ./dist/example/app.js\"",
+        "start": "node dist/example/app.js"
     },
     "devDependencies": {
         "@types/node": "^12.7.12",
